@@ -53,9 +53,9 @@
 
 #### Deliverables
 
-- [ ] GitHub repository setup with proper structure
-- [ ] Development environment configuration
-  - [ ] Python virtual environment
+- [x] GitHub repository setup with proper structure
+- [x] Development environment configuration
+  - [x] Python virtual environment (requirements.txt)
   - [ ] Node.js project initialization
   - [ ] Docker development setup
 - [ ] CI/CD pipeline skeleton
@@ -759,9 +759,8 @@ Throughout this project, the team will gain expertise in:
 
 ## 📞 Contact & Collaboration
 
-**Project Lead**: [Your Name]  
-**Email**: [your.email@example.com]  
-**GitHub**: [github.com/yourusername/equilibriumx](https://github.com/yourusername/equilibriumx)
+**Project Lead**: Herald Michain  
+**GitHub**: [github.com/loxleyftsck/EquilibriumX-Multi-Agent-Negotiation-Sandbox](https://github.com/loxleyftsck/EquilibriumX-Multi-Agent-Negotiation-Sandbox)
 
 ### Collaboration Opportunities
 
