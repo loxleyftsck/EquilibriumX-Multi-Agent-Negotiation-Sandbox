@@ -184,6 +184,17 @@ The agent's policy $\pi: \mathcal{S} \rightarrow \mathcal{P}(\mathcal{A})$ maps 
 \pi^* = \arg\max_\pi \mathbb{E}_{\tau \sim \pi} \left[ \sum_{t=0}^T \gamma^t r_t \right]
 \end{equation}
 
+\subsection{Multi-Agent Proximal Policy Optimization (MAPPO)}
+
+To solve this Dec-POMDP, we employ Multi-Agent Proximal Policy Optimization (MAPPO). Unlike standard Independent PPO, we utilize the Centralized Training Decentralized Execution (CTDE) paradigm where the critic has access to the global state during training.
+
+The objective is to maximize the clipped surrogate objective function:
+\begin{equation}
+L^{CLIP}(\theta) = \hat{\mathbb{E}}_t \left[ \min(r_t(\theta)\hat{A}_t, \text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon)\hat{A}_t) \right]
+\end{equation}
+
+where $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)}$ is the probability ratio, $\hat{A}_t$ is the advantage estimator, and $\epsilon$ is the clipping hyperparameter (set to 0.2). This ensures stable policy updates in the non-stationary multi-agent environment.
+
 \subsection{Convergence Metrics}
 
 \subsubsection{Nash Distance}
@@ -375,7 +386,10 @@ Each policy network consists of:
 
 \subsection{LLM Service (Ollama)}
 
-The LLM Service translates strategic actions into natural language using locally-deployed large language models via Ollama \cite{ollama2024}. This design choice ensures data privacy and eliminates API costs while maintaining low latency.
+The LLM Service translates strategic actions into natural language using locally-deployed large language models via Ollama \cite{ollama2024}. This design choice is critical for privacy-sensitive negotiations.
+
+\subsubsection{Privacy-Preserving Mechanism}
+By executing the LLM inference within the local Trusted Execution Environment (TEE), we ensure that sensitive reservation prices ($V_S, V_R$) and strategic intent are never transmitted to external third-party APIs. This addresses a major barrier to adopting AI in high-stakes corporate or diplomatic negotiations.
 
 \subsubsection{Prompt Template}
 

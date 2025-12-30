@@ -153,6 +153,7 @@ To maintain stability while allowing rapid experimentation, we follow this rigor
 ##### 1.3 Testing & Validation
 
 - [ ] Unit tests for environment logic
+  - [x] Basic Smoke Tests (`test_smoke.py`)
   - [ ] `test_reset()`: Verify initial state distribution
   - [ ] `test_step()`: Verify state transitions
   - [ ] `test_rewards()`: Verify logic for all 4 distinct outcomes (Agreement, Walkaway, Timeout, Invalid)
