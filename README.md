@@ -20,6 +20,8 @@
 
 The system is composed of four primary layers:
 
+![EquilibriumX Architecture](./assets/equilibriumx_architecture.png)
+
 1. **RL Engine (Ray RLlib)**: Handles strategic decision-making using PPO/SAC.
 2. **LLM Service (Ollama)**: Translates strategic actions into human-interpretable messages.
 3. **Tracking Layer (MLflow)**: Logs every negotiation run, hyperparameter sweep, and model checkpoint.
