@@ -108,7 +108,7 @@ Each agent $i \in \{S, R\}$ has a private reservation price $V_i$ representing t
     \item Retailer's reservation price: $V_R$ (maximum acceptable buying price)
 \end{itemize}
 
-For a feasible bargaining zone to exist, we require $V_S < V_R$. The difference $(V_R - V_S)$ represents the surplus available for distribution.
+For a feasible bargaining zone to exist, we require $V_S < V_R$. The difference $Z = (V_R - V_S)$ represents the joint surplus or "bargaining pies" available for distribution. Agents aim to maximize their share of $Z$ while minimizing the risk of a "no-deal" outcome.
 
 \subsubsection{Action Space}
 
@@ -137,22 +137,11 @@ where:
 
 \subsection{Nash Equilibrium}
 
-A price agreement $p^*$ constitutes a Nash Equilibrium if no agent can unilaterally deviate to improve their utility. Formally:
-
-\begin{definition}[Nash Equilibrium Price]
-A price $p^* \in [V_S, V_R]$ is a Nash Equilibrium if:
+In a sequential bargaining game, we specifically seek the \textit{Subgame Perfect Equilibrium} (SPE). An agreement price $p^*$ is an SPE if it remains optimal for any subgame originating at round $t$. For symmetric bargaining power with discount factor $\delta \rightarrow 1$ and $T \rightarrow \infty$, the Nash bargaining solution predicts:
 \begin{equation}
-U_S(p^*) \geq U_S(p') \quad \forall p' \in [V_S, V_R]
+p^* = V_S + \frac{V_R - V_S}{2} = \frac{V_S + V_R}{2}
 \end{equation}
-\begin{equation}
-U_R(p^*) \geq U_R(p') \quad \forall p' \in [V_S, V_R]
-\end{equation}
-\end{definition}
-
-For symmetric bargaining power, the Nash bargaining solution predicts:
-\begin{equation}
-p^* = \frac{V_S + V_R}{2}
-\end{equation}
+This serves as our theoretical baseline for convergence evaluation.
 
 \subsection{Utility Functions}
 
@@ -166,8 +155,6 @@ U_S(p, t) = \begin{cases}
 \end{cases}
 \end{equation}
 
-where $\delta \in (0, 1)$ is the discount factor, $\beta$ is a speed bonus, and $\kappa > 0$ is the opportunity cost of no agreement.
-
 \subsubsection{Retailer Utility}
 
 Similarly, the Retailer's utility is:
@@ -180,13 +167,15 @@ U_R(p, t) = \begin{cases}
 
 \subsection{Reinforcement Learning Formulation}
 
-We formulate the negotiation as a Markov Decision Process (MDP) defined by the tuple $(\mathcal{S}, \mathcal{A}, \mathcal{P}, \mathcal{R}, \gamma)$ where:
+We formulate the negotiation as a multi-agent Reinforcement Learning problem, specifically a Decentralized Partially Observable Markov Decision Process (Dec-POMDP) since $V_{-i}$ is not directly observed. The environment is defined by $(\mathcal{S}, \mathcal{A}, \mathcal{P}, \mathcal{R}, \Omega, \mathcal{O}, \gamma)$ where:
 
 \begin{itemize}
-    \item $\mathcal{S}$: State space (as defined in Eq. 2)
-    \item $\mathcal{A}$: Action space (as defined in Eq. 1)
-    \item $\mathcal{P}: \mathcal{S} \times \mathcal{A} \times \mathcal{S} \rightarrow [0, 1]$: Transition probability
-    \item $\mathcal{R}: \mathcal{S} \times \mathcal{A} \rightarrow \mathbb{R}$: Reward function
+    \item $\mathcal{S}$: True environment state
+    \item $\mathcal{A}$: Hybrid action space (Discrete type + Continuous price)
+    \item $\mathcal{P}$: Transition dynamics $P(s'|s, a_S, a_R)$
+    \item $\mathcal{R}$: Policy-specific reward function (Eq. 5, 6)
+    \item $\Omega$: Observation space for agent $i$
+    \item $\mathcal{O}$: Observation probability $O(o|s, a)$
     \item $\gamma \in (0, 1)$: Discount factor
 \end{itemize}
 

@@ -1,0 +1,33 @@
+# EquilibriumX Dependencies
+# Core
+numpy
+pandas
+matplotlib
+scipy
+
+# Reinforcement Learning
+ray[rllib]==2.9.0
+pettingzoo==1.24.2
+gymnasium==0.29.1
+
+# AI & LLM
+torch
+transformers
+ollama
+
+# Experiment Tracking
+mlflow
+dagshub
+
+# Backend & API
+fastapi
+uvicorn
+websockets
+python-dotenv
+psycopg2-binary
+redis
+
+# Development
+pytest
+black
+flake8
