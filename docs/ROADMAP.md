@@ -133,28 +133,30 @@ To maintain stability while allowing rapid experimentation, we follow this rigor
 
 ##### 1.1 Custom PettingZoo Environment
 
-- [ ] Environment class implementation (`BargainingEnv`)
-- [ ] State space definition and validation
-- [ ] Action space definition (Discrete + Continuous)
-- [ ] Observation function for each agent
-- [ ] Transition dynamics (step function)
-- [ ] Episode termination logic
+- [x] Environment class implementation (`BargainingEnv`)
+- [x] State space definition and validation
+- [x] Action space definition (Discrete + Continuous)
+- [x] Observation function for each agent
+- [x] Transition dynamics (step function)
+- [x] Episode termination logic
 
 ##### 1.2 Reward System
 
-- [ ] Supplier reward function
-  - [ ] Base profit calculation
-  - [ ] Time discounting mechanism
-  - [ ] Speed bonus incentives
-- [ ] Retailer reward function
-- [ ] No-deal penalty implementation
-- [ ] Reward normalization and scaling
+- [x] Supplier reward function
+  - [x] Base profit calculation
+  - [x] Time discounting mechanism
+  - [x] Speed bonus incentives
+- [x] Retailer reward function
+- [x] No-deal penalty implementation
+- [x] Reward normalization and scaling
 
 ##### 1.3 Testing & Validation
 
-- [ ] Unit tests for environment logic
+- [x] Unit tests for environment logic
   - [x] Basic Smoke Tests (`test_smoke.py`)
-  - [ ] `test_reset()`: Verify initial state distribution
+  - [x] `test_reset()`: Verify initial state distribution
+  - [x] `test_step()`: Verify state transitions
+  - [x] `test_rewards()`: Verify logic for all 4 distinct outcomes (Agreement, Walkaway, Timeout, Invalid)
   - [ ] `test_step()`: Verify state transitions
   - [ ] `test_rewards()`: Verify logic for all 4 distinct outcomes (Agreement, Walkaway, Timeout, Invalid)
   - [ ] Edge cases (timeouts, invalid actions, zero price)
