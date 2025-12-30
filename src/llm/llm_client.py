@@ -1,32 +1,62 @@
-import os
-import requests
+import aiohttp
+import json
+import logging
 
 class LLMClient:
-    def __init__(self, model_name="llama3", base_url="http://localhost:11434"):
-        self.model_name = model_name
+    """
+    Client for interacting with local Ollama API for natural language negotiation.
+    """
+    def __init__(self, base_url="http://localhost:11434", model="llama3", mock_mode=False):
         self.base_url = base_url
-        
-    def generate_message(self, prompt, system_prompt=None):
+        self.model = model
+        self.mock_mode = mock_mode
+        self.logger = logging.getLogger(__name__)
+
+    async def generate_response(self, prompt: str, system_prompt: str = None) -> str:
         """
-        Generates a negotiation message using the local Ollama instance.
+        Generates a negotiation message based on the strategic offer and persona.
         """
+        if self.mock_mode:
+            return f"[Mock LLM Response for ${self.model}] Based on our internal valuation, this offer is the best we can do today."
+
         payload = {
-            "model": self.model_name,
+            "model": self.model,
             "prompt": prompt,
             "stream": False
         }
         if system_prompt:
             payload["system"] = system_prompt
-            
-        try:
-            response = requests.post(f"{self.base_url}/api/generate", json=payload)
-            response.raise_for_status()
-            return response.json().get("response", "")
-        except requests.exceptions.RequestException as e:
-            print(f"Error calling LLM: {e}")
-            return "Error: Could not generate message."
 
-if __name__ == "__main__":
-    # Smoke test
-    client = LLMClient()
-    print("Test Response:", client.generate_message("Say hello to the negotiation partner."))
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(f"{self.base_url}/api/generate", json=payload) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        return data.get("response", "").strip()
+                    else:
+                        error_text = await resp.text()
+                        self.logger.error(f"Ollama API Error: {resp.status} - {error_text}")
+                        return f"[Error: Ollama status {resp.status}]"
+        except Exception as e:
+            self.logger.error(f"Failed to connect to Ollama: {e}")
+            return f"[Error: Connection failed to local LLM at {self.base_url}]"
+
+    def get_negotiation_prompt(self, agent_role: str, offer_price: float, history: list, persona: str = "professional"):
+        """
+        Constructs a prompt for the LLM based on the current negotiation state.
+        """
+        history_str = "\n".join([f"- Offer: {h}" for h in history[-3:]])
+        
+        prompt = f"""
+You are a {agent_role} in a commercial negotiation. 
+Your current strategic offer is: ${offer_price:.2f}.
+Recent history:
+{history_str}
+
+Persona: {persona}
+
+Task: Write a concise message (max 2 sentences) to the other party justifying this offer. 
+Do not mention that you are an AI. Be firm but fair.
+Message:
+"""
+        return prompt
