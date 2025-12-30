@@ -32,8 +32,6 @@
 \begin{document}
 
 \title{EquilibriumX: A Hybrid Reinforcement Learning and Large Language Model Framework for Multi-Agent Negotiation\\
-{\footnotesize \textsuperscript{*}IEEE Format Research Paper}
-}
 
 \author{\IEEEauthorblockN{Author Name}
 \IEEEauthorblockA{\textit{Department of Computer Science} \\
@@ -183,6 +181,17 @@ The agent's policy $\pi: \mathcal{S} \rightarrow \mathcal{P}(\mathcal{A})$ maps 
 \begin{equation}
 \pi^* = \arg\max_\pi \mathbb{E}_{\tau \sim \pi} \left[ \sum_{t=0}^T \gamma^t r_t \right]
 \end{equation}
+
+\subsection{Multi-Agent Proximal Policy Optimization (MAPPO)}
+
+To solve this Dec-POMDP, we employ Multi-Agent Proximal Policy Optimization (MAPPO). Unlike standard Independent PPO, we utilize the Centralized Training Decentralized Execution (CTDE) paradigm where the critic has access to the global state during training.
+
+The objective is to maximize the clipped surrogate objective function:
+\begin{equation}
+L^{CLIP}(\theta) = \hat{\mathbb{E}}_t \left[ \min(r_t(\theta)\hat{A}_t, \text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon)\hat{A}_t) \right]
+\end{equation}
+
+where $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)}$ is the probability ratio, $\hat{A}_t$ is the advantage estimator, and $\epsilon$ is the clipping hyperparameter (set to 0.2). This ensures stable policy updates in the non-stationary multi-agent environment.
 
 \subsection{Convergence Metrics}
 
@@ -345,6 +354,27 @@ The negotiation proceeds through the following steps:
 
 This architecture ensures separation of concerns: RL handles strategy, LLM handles communication, and the API Gateway orchestrates the flow.
 
+\subsection{Hybrid Interaction Algorithm}
+
+The core interaction logic is formalized in Algorithm \ref{alg:hybrid}.
+
+\begin{algorithm}
+\caption{Hybrid RL-LLM Negotiation Step}
+\label{alg:hybrid}
+\begin{algorithmic}[1]
+\REQUIRE State $s_t$, Policies $\pi_S, \pi_R$, LLM $\mathcal{L}$
+\ENSURE Message $m_t$, Next State $s_{t+1}$
+\STATE \textbf{RL Step:}
+\STATE $a_t^{raw}, p_t \leftarrow \pi(s_t)$ \COMMENT{Sample strategic action}
+\STATE \textbf{Translation Step:}
+\STATE $c_t \leftarrow \text{ConstructContext}(s_t, a_t^{raw}, p_t)$
+\STATE $m_t \leftarrow \mathcal{L}.\text{generate}(c_t | \text{style})$
+\STATE \textbf{Environment Step:}
+\STATE $s_{t+1}, r_t, d_t \leftarrow \text{Env}.\text{step}(a_t^{raw}, p_t)$
+\RETURN $m_t, s_{t+1}$
+\end{algorithmic}
+\end{algorithm}
+
 \subsection{RL Engine (Ray RLlib)}
 
 The RL Engine implements the strategic decision-making layer using Ray RLlib \cite{liang2018rllib}, a distributed reinforcement learning framework. We employ Proximal Policy Optimization (PPO) \cite{schulman2017proximal} as our primary algorithm due to its sample efficiency and stable training characteristics.
@@ -366,16 +396,25 @@ Each policy network consists of:
     \item Input layer: $|\mathcal{S}|$ dimensions
     \item Hidden layers: 2 fully-connected layers (256, 128 units)
     \item Activation: ReLU
-    \item Output layer: 
+    \item Output layer (Multi-Head Action Distribution):
     \begin{itemize}
-        \item Action type: 3-way softmax (ACCEPT/COUNTER/WALK\_AWAY)
-        \item Price value: Bounded continuous output $[0, P_{\max}]$
+        \item \textbf{Discrete Head}: Softmax over $A_{type} \in \{\text{ACCEPT}, \text{COUNTER}, \text{QUIT}\}$
+        \begin{equation}
+        P(a_{type}|s) = \text{softmax}(W_d h_2 + b_d)
+        \end{equation}
+        \item \textbf{Continuous Head}: Gaussian $\mathcal{N}(\mu, \sigma)$ for Price $p$
+        \begin{equation}
+        \mu = \text{sigmoid}(W_\mu h_2 + b_\mu) \cdot P_{\max}
+        \end{equation}
     \end{itemize}
 \end{itemize}
 
 \subsection{LLM Service (Ollama)}
 
-The LLM Service translates strategic actions into natural language using locally-deployed large language models via Ollama \cite{ollama2024}. This design choice ensures data privacy and eliminates API costs while maintaining low latency.
+The LLM Service translates strategic actions into natural language using locally-deployed large language models via Ollama \cite{ollama2024}. This design choice is critical for privacy-sensitive negotiations.
+
+\subsubsection{Privacy-Preserving Mechanism}
+By executing the LLM inference within the local Trusted Execution Environment (TEE), we ensure that sensitive reservation prices ($V_S, V_R$) and strategic intent are never transmitted to external third-party APIs. This addresses a major barrier to adopting AI in high-stakes corporate or diplomatic negotiations.
 
 \subsubsection{Prompt Template}
 

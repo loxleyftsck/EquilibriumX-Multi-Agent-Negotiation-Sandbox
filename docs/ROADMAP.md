@@ -43,6 +43,27 @@
 
 ---
 
+## 🔄 Git Workflow & Release Schedule
+
+To maintain stability while allowing rapid experimentation, we follow this rigorous release cycle:
+
+| Branch | Frequency | Trigger / Condition | Risk Level |
+| :--- | :--- | :--- | :--- |
+| **`prototype`** | **Daily / Hourly** | *Experimentation*: New reward functions, crazy prompt ideas, quick fix attempts. Force-push allowed. | 🔴 **High** (Unstable) |
+| **`develop`** | **Weekly** | *Integration*: When a feature is complete and passes unit tests. Merged from `feature/*` or polished `prototype`. | 🟡 **Medium** (Beta) |
+| **`master`** | **Milestone (Monthly)** | *Release*: End of a major phase (e.g., "Foundation Completed"). Must pass full regression testing & QA. | 🟢 **Low** (Stable) |
+
+### 📅 Release Calendar (Estimates)
+
+- **v0.1.0 (Foundation)**: End of Week 3 (Target: Jan 20, 2025)
+  - *Merge to Master*: When `negotiator_env.py` is fully tested.
+- **v0.2.0 (RL Baseline)**: End of Week 5 (Target: Feb 3, 2025)
+  - *Merge to Master*: When PPO agents show >90% validation success.
+- **v0.3.0 (Hybrid AI)**: End of Week 7 (Target: Feb 17, 2025)
+  - *Merge to Master*: When LLM is integrated and speaking naturally.
+
+---
+
 ## 📅 Development Timeline
 
 ### **Phase 0: Project Setup** (Week 0 - Week 1)
@@ -112,32 +133,39 @@
 
 ##### 1.1 Custom PettingZoo Environment
 
-- [ ] Environment class implementation (`BargainingEnv`)
-- [ ] State space definition and validation
-- [ ] Action space definition (Discrete + Continuous)
-- [ ] Observation function for each agent
-- [ ] Transition dynamics (step function)
-- [ ] Episode termination logic
+- [x] Environment class implementation (`BargainingEnv`)
+- [x] State space definition and validation
+- [x] Action space definition (Discrete + Continuous)
+- [x] Observation function for each agent
+- [x] Transition dynamics (step function)
+- [x] Episode termination logic
 
 ##### 1.2 Reward System
 
-- [ ] Supplier reward function
-  - [ ] Base profit calculation
-  - [ ] Time discounting mechanism
-  - [ ] Speed bonus incentives
-- [ ] Retailer reward function
-- [ ] No-deal penalty implementation
-- [ ] Reward normalization and scaling
+- [x] Supplier reward function
+  - [x] Base profit calculation
+  - [x] Time discounting mechanism
+  - [x] Speed bonus incentives
+- [x] Retailer reward function
+- [x] No-deal penalty implementation
+- [x] Reward normalization and scaling
 
 ##### 1.3 Testing & Validation
 
-- [ ] Unit tests for environment logic
-  - [ ] State transitions
-  - [ ] Reward calculations
-  - [ ] Edge cases (timeouts, invalid actions)
-- [ ] Random agent baseline
-- [ ] Environment rendering (text-based)
-- [ ] Gymnasium API compliance verification
+- [x] Unit tests for environment logic
+  - [x] Basic Smoke Tests (`test_smoke.py`)
+  - [x] `test_reset()`: Verify initial state distribution
+  - [x] `test_step()`: Verify state transitions
+  - [x] `test_rewards()`: Verify logic for all 4 distinct outcomes (Agreement, Walkaway, Timeout, Invalid)
+  - [ ] `test_step()`: Verify state transitions
+  - [ ] `test_rewards()`: Verify logic for all 4 distinct outcomes (Agreement, Walkaway, Timeout, Invalid)
+  - [ ] Edge cases (timeouts, invalid actions, zero price)
+- [ ] Integration Tests
+  - [ ] Cycle test: Run 1000 steps with random actions to check for memory leaks
+  - [ ] Parallel Env test: Verify PettingZoo `parallel_env` compliance
+- [ ] Random agent baseline script (`scripts/random_baseline.py`)
+- [ ] Environment rendering (Text-based CLI visualization)
+- [ ] Gymnasium API compliance verification (`api_check.py`)
 
 #### Success Metrics
 
@@ -172,13 +200,15 @@
 
 ##### 2.2 Training Pipeline
 
-- [ ] Training script with checkpointing
-- [ ] Hyperparameter configuration system
+- [ ] Training script (`scripts/train_ppo.py`)
+- [ ] Checkpointing system (save model every N episodes)
+- [ ] Hyperparameter configuration system (`configs/ppo_config.yaml`)
 - [ ] Curriculum learning (optional)
-  - [ ] Start with narrow BATNA range
-  - [ ] Gradually increase complexity
-- [ ] TensorBoard integration
-- [ ] Weights & Biases logging
+  - [ ] Level 1: Fixed BATNA, 1 round
+  - [ ] Level 2: Random BATNA, 5 rounds
+  - [ ] Level 3: Full complexity
+- [ ] TensorBoard integration for live metrics
+- [ ] Weights & Biases (W&B) logging setup
 
 ##### 2.3 Opponent Modeling
 
