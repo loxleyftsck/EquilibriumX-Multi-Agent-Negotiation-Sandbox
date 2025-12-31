@@ -61,6 +61,7 @@ class NegotiatorEnv(ParallelEnv):
         # Round 0: Supplier makes offer. Last offer is None?
         # Implementation detail: 'current_price' initiates at a neutral value (e.g. 0) or max?
         self.current_price = 0.0
+        self.deal_price = None
         self.price_history = np.zeros(6, dtype=np.float32)
         
         self.current_proposer = "supplier" 
@@ -104,7 +105,8 @@ class NegotiatorEnv(ParallelEnv):
                 terminations = {a: True for a in self.agents}
                 rewards[agent_name] = -0.5
             else:
-                deal_price = self.current_price
+                self.deal_price = self.current_price
+                deal_price = self.deal_price
                 
                 # Rewards (Surplus)
                 # Supplier: P - Vs

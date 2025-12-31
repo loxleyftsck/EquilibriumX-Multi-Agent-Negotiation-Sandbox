@@ -32,14 +32,19 @@
 - [x] Theoretical foundation documentation
 - [x] Technology stack selection
 - [x] Development roadmap definition
+- [x] Phase 1: Core Environment implementation
+- [x] Phase 2: RL Training Infrastructure
+- [x] Phase 3: LLM Integration (Ollama)
+- [x] Phase 4: Interactive Dashboard & HITL
 
 ### 🚧 In Progress
 
-- [ ] None (awaiting Phase 1 kickoff)
+- [/] Phase 5: Production Hardening & Performance optimization
 
 ### 📝 Planned
 
-- [ ] All implementation phases (see below)
+- [ ] Phase 6: Advanced Multi-Agent Dynamics
+- [ ] Phase 7: Research Publication & Paper Finalization
 
 ---
 
@@ -192,29 +197,35 @@ To maintain stability while allowing rapid experimentation, we follow this rigor
 
 ##### 2.1 Ray RLlib Integration
 
-- [ ] Ray cluster initialization
-- [ ] Multi-agent PPO configuration
-- [ ] Policy specification for supplier/retailer
+- [x] Ray cluster initialization (with Windows fix)
+- [x] Multi-agent PPO configuration
+- [x] Policy specification for supplier/retailer
 - [ ] Distributed rollout workers setup
 - [ ] GPU acceleration configuration
 
 ##### 2.2 Training Pipeline
 
-- [ ] Training script (`scripts/train_ppo.py`)
-- [ ] Checkpointing system (save model every N episodes)
+- [x] Training script (`scripts/train_ppo.py`)
+- [x] Checkpointing system (save model every N episodes)
 - [ ] Hyperparameter configuration system (`configs/ppo_config.yaml`)
 - [ ] Curriculum learning (optional)
   - [ ] Level 1: Fixed BATNA, 1 round
   - [ ] Level 2: Random BATNA, 5 rounds
   - [ ] Level 3: Full complexity
-- [ ] TensorBoard integration for live metrics
+- [x] TensorBoard integration (via RLlib)
+- [x] MLflow logging setup
 - [ ] Weights & Biases (W&B) logging setup
 
-##### 2.3 Opponent Modeling
+##### 3.1 LLM Infrastructure [NEW]
 
-- [ ] Belief state representation
-- [ ] Bayesian update mechanism
-- [ ] Integration into observation space
+- [x] `src/llm/llm_client.py` (Ollama Client)
+- [x] `src/llm/prompts.py` (Negotiation Personas)
+- [x] `scripts/showcase_hybrid.py` (Verification script)
+
+##### 3.2 Hybrid Logic [NEW]
+
+- [x] `src/agents/hybrid_agent.py` (RL + LLM Bridge)
+- [x] Mock LLM mode for seamless local testing
 
 ##### 2.4 Evaluation Framework
 
