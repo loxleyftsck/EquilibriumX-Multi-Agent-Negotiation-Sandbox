@@ -4,17 +4,17 @@ from src.environment.negotiator_env import NegotiatorEnv
 
 @pytest.fixture
 def env():
-    return NegotiatorEnv(config={"max_rounds": 10})
+    return NegotiatorEnv(config={"max_rounds": 10, "num_items": 1})
 
 def test_initialization(env):
     obs, info = env.reset()
     assert "supplier" in obs
     assert "retailer" in obs
-    # Check valuation feasibility
-    assert env.val_s <= env.val_r
-    # Check observation shape
-    assert obs["supplier"].shape == (10,)
-    assert obs["retailer"].shape == (10,)
+    # Check valuation feasibility (element-wise for arrays)
+    assert np.all(env.val_s <= env.val_r)
+    # Check observation shape (1 item: 2*1 + 2 + 1*3 = 7)
+    assert obs["supplier"].shape == (7,)
+    assert obs["retailer"].shape == (7,)
     # Check turn (Supplier starts)
     assert env.current_proposer == "supplier"
 
@@ -27,7 +27,7 @@ def test_step_mechanics(env):
     }
     obs, rewards, terms, truncs, infos = env.step(actions)
     
-    assert env.current_price == 5000.0
+    assert env.current_prices[0] == 5000.0
     assert env.current_round == 1
     assert env.current_proposer == "retailer"
     assert terms["supplier"] == False
@@ -37,27 +37,29 @@ def test_step_mechanics(env):
         "retailer": {"type": 1, "price": np.array([5500.0])}
     }
     obs, rewards, terms, truncs, infos = env.step(actions)
-    assert env.current_price == 5500.0
+    assert env.current_prices[0] == 5500.0
     assert env.current_round == 2
     assert env.current_proposer == "supplier"
 
 def test_agreement(env):
     env.reset()
     # Force valuations for deterministic check
-    env.val_s = 4000
-    env.val_r = 8000
+    env.val_s = np.array([4000.0])
+    env.val_r = np.array([8000.0])
+    env.valuations["supplier"] = env.val_s
+    env.valuations["retailer"] = env.val_r
     env.max_price = 10000
     
     # Supplier proposes 6000
-    env.step({"supplier": {"type": 1, "price": [6000.0]}})
+    env.step({"supplier": {"type": 1, "price": np.array([6000.0])}})
     
     # Retailer Accepts
-    actions = {"retailer": {"type": 0, "price": [0.0]}}
+    actions = {"retailer": {"type": 0, "price": np.array([0.0])}}
     obs, rewards, terms, truncs, infos = env.step(actions)
     
     # Deal at 6000
     assert terms["supplier"] == True
-    assert infos["deal_price"] == 6000.0
+    assert env.deal_prices[0] == 6000.0
     
     # Check Rewards
     # Supplier: (6000 - 4000)/10000 = 0.2 * discount(0.99^1)
@@ -66,24 +68,32 @@ def test_agreement(env):
 
 def test_walkaway(env):
     env.reset()
-    actions = {"supplier": {"type": 2, "price": [0.0]}} # Quit
+    actions = {"supplier": {"type": 2, "price": np.array([0.0])}} # Quit
     obs, rewards, terms, truncs, infos = env.step(actions)
     
     assert terms["supplier"] == True
     assert rewards["supplier"] == -0.1
     assert infos["supplier"]["result"] == "quit"
 
-def test_timeout(env):
-    env = NegotiatorEnv(config={"max_rounds": 2})
+def test_timeout():
+    # Use stricter max_rounds for timeout test
+    env = NegotiatorEnv(config={"max_rounds": 3, "num_items": 1})
     env.reset()
     
-    # Round 1
-    env.step({"supplier": {"type": 1, "price": [5000]}})
-    # Round 2
-    env.step({"retailer": {"type": 1, "price": [6000]}})
+    # Round 1 (current_round goes from 0 to 1)
+    obs, rewards, terms, truncs, infos = env.step({"supplier": {"type": 1, "price": np.array([5000.0])}})
+    assert env.current_round == 1
+    assert not any(truncs.values())
     
-    # Round 3 (Should trigger timeout)
-    obs, rewards, terms, truncs, infos = env.step({"supplier": {"type": 1, "price": [5500]}})
+    # Round 2 (current_round goes from 1 to 2)
+    obs, rewards, terms, truncs, infos = env.step({"retailer": {"type": 1, "price": np.array([6000.0])}})
+    assert env.current_round == 2
+    assert not any(truncs.values())
     
+    # Round 3 (current_round goes from 2 to 3, equals max_rounds, should truncate)
+    obs, rewards, terms, truncs, infos = env.step({"supplier": {"type": 1, "price": np.array([5500.0])}})
+    assert env.current_round == 3
     assert truncs["supplier"] == True
+    assert truncs["retailer"] == True
     assert rewards["supplier"] == -0.05
+    assert rewards["retailer"] == -0.05

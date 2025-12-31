@@ -13,4 +13,4 @@ def test_env_initialization(env):
 def test_api_import():
     """Smoke test to ensure API module is importable."""
     from src.api.app import app
-    assert app.title == "EquilibriumX API"
+    assert app.title == "EquilibriumX API Gateway"
