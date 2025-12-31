@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EquilibriumX | Multi-Agent Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <header>
+            <div class="logo">EQUILIBRIUMX</div>
+            <div id="connection-status" class="status-badge">API DISCONNECTED</div>
+        </header>
+
+        <!-- Left Sidebar: Agent Context -->
+        <aside class="panel">
+            <div class="panel-title">🤖 Agent Intelligence</div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div id="val-s" class="stat-value">$0</div>
+                    <div class="stat-label">Supplier Cost</div>
+                </div>
+                <div class="stat-card">
+                    <div id="val-r" class="stat-value">$0</div>
+                    <div class="stat-label">Retailer Value</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <div class="panel-title">🧠 Decision Engine</div>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
+                    Current Algorithm: <strong>MAPPO (Multi-Agent PPO)</strong><br>
+                    Exploration: Hyper-parameter Search enabled.
+                </p>
+            </div>
+
+            <button id="start-btn" class="btn-primary">START SESSION</button>
+        </aside>
+
+        <!-- Main Area: Visualization -->
+        <main class="panel viz-area">
+            <div class="panel-title">📈 Price Convergence Trajectory</div>
+            <canvas id="convergence-chart"></canvas>
+
+            <div class="stats-grid" style="height: 100px;">
+                <div class="stat-card">
+                    <div id="current-round" class="stat-value">0 / 10</div>
+                    <div class="stat-label">Rounds Completed</div>
+                </div>
+                <div class="stat-card">
+                    <div id="agreement-status" class="stat-value">PENDING</div>
+                    <div class="stat-label">Phase Status</div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar: LLM Messages & HITL Controls -->
+        <section class="panel">
+            <div class="panel-title">💬 Hybrid Dialogue Stream</div>
+            <div id="chat-stream" class="chat-container">
+                <div class="message" style="opacity: 0.5; font-style: italic;">Awaiting session start...</div>
+            </div>
+
+            <div id="hitl-controls"
+                style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--glass-border); display: none;">
+                <div class="panel-title">🕹️ Manual Override</div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <input type="number" id="manual-price" placeholder="Your Price ($)"
+                        style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; padding: 10px; border-radius: 8px;">
+                    <textarea id="manual-message" placeholder="Your Message..."
+                        style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white; padding: 10px; border-radius: 8px; resize: none; height: 60px;"></textarea>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button id="btn-counter" class="btn-primary"
+                            style="background: var(--accent-blue);">COUNTER</button>
+                        <button id="btn-accept" class="btn-primary"
+                            style="background: #00ff00; color: black;">ACCEPT</button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="manual-toggle">
+                <label for="manual-toggle" style="font-size: 0.8rem; color: var(--text-secondary);">Enable Manual
+                    Override</label>
+            </div>
+        </section>
+    </div>
+
+    <script src="/static/index.js"></script>
+</body>
+
+</html>

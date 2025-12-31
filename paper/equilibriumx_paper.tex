@@ -450,12 +450,13 @@ The API Gateway orchestrates communication between the RL Engine, LLM Service, a
 
 The frontend provides real-time visualization of negotiations, including:
 \begin{itemize}
-    \item Chat interface with typed messages
-    \item Live price convergence chart
-    \item Nash distance visualization
     \item Agent utility tracking
     \item Configuration controls
 \end{itemize}
+
+\subsection{Human-in-the-Loop (HITL) Integration}
+
+A distinguishing feature of EquilibriumX is the Human-in-the-Loop (HITL) override mechanism. While autonomous agents drive the bulk of the negotiation, human experts can interrupt the simulation at any point to manually dictate offers or accept/reject deals. This capability is facilitated through a dedicated WebSocket control channel that allows the backend to pause the RL inference loop and wait for asynchronous human input from the responsive dashboard interface. This feature is particularly valuable for "shadow negotiation" training and adversarial testing of RL-based strategic models.
 
 \section{Implementation}
 
@@ -594,7 +595,9 @@ Figure \ref{fig:convergence} shows the Nash distance over training iterations. A
 \label{fig:convergence}
 \end{figure}
 
-\subsection{Deal Success Rate}
+\subsection{Hardening and Deployment Resilience}
+
+To ensure research-grade stability, the system was subjected to chaos testing, including simulated WebSocket disconnections and LLM service latency spikes. The implementation of global exception handlers and multi-stage Docker orchestration ensures that the platform remains resilient under load. The containerized deployment architecture allows for rapid scaling of RL rollout workers in distributed environments while maintaining strict local inference for the LLM layer.
 
 Table \ref{tab:results} summarizes performance across different bargaining zone widths.
 
