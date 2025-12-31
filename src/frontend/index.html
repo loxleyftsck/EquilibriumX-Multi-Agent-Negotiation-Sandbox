@@ -11,23 +11,43 @@
 </head>
 
 <body>
+    <div class="ticker-tape">
+        <div class="ticker-content">
+            <span>BITCOIN $43,210.50 <small style="color:var(--accent-success)">+2.4%</small></span>
+            <span>EQUILIBRIUM_X_PROTOCOL <small style="color:var(--accent-primary)">v2.0.4</small></span>
+            <span>SUPPLIER_SENTIMENT <small style="color:var(--accent-danger)">AGGRESSIVE</small></span>
+            <span>RETAILER_STATE <small style="color:var(--accent-success)">COOPERATIVE</small></span>
+            <span>MARKET_EQUILIBRIUM <small style="color:var(--accent-mid)">OPTIMIZING...</small></span>
+            <span>SESSION_ID: <small id="display-session-id">---</small></span>
+        </div>
+    </div>
+
     <div class="dashboard-container">
         <header>
-            <div class="logo">EQUILIBRIUMX</div>
-            <div id="connection-status" class="status-badge">API DISCONNECTED</div>
+            <div class="logo-container">
+                <div class="logo">EQUILIBRIUM<span>X</span></div>
+                <div class="logo-sub">MULTI-AGENT NEGOTIATION TERMINAL</div>
+            </div>
+            <div class="system-status">
+                <div class="scanner-line"></div>
+                <div id="connection-status" class="status-badge">SYSTEM STANDBY</div>
+            </div>
         </header>
 
-        <!-- Left Sidebar: Agent Context -->
+        <!-- Left Sidebar: Intelligence -->
         <aside class="panel">
-            <div class="panel-title">🤖 Agent Intelligence</div>
+            <div class="panel-header">
+                <div class="panel-title-icon">01</div>
+                <div class="panel-title">MARKET INTELLIGENCE</div>
+            </div>
             <div class="stats-grid">
-                <div class="stat-card">
+                <div class="stat-card" title="Hover for raw item costs">
                     <div id="val-s" class="stat-value">$0</div>
-                    <div class="stat-label">Supplier Cost</div>
+                    <div class="stat-label">Supplier Cost (Avg)</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" title="Hover for raw item values">
                     <div id="val-r" class="stat-value">$0</div>
-                    <div class="stat-label">Retailer Value</div>
+                    <div class="stat-label">Retailer Value (Avg)</div>
                 </div>
             </div>
 
@@ -39,12 +59,22 @@
                 </p>
             </div>
 
-            <button id="start-btn" class="btn-primary">START SESSION</button>
+            <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--glass-border);">
+                <div class="panel-title">📜 Session History</div>
+                <div id="session-list" class="history-list">
+                    <div style="font-size: 0.8rem; opacity: 0.5;">Loading history...</div>
+                </div>
+            </div>
+
+            <button id="start-btn" class="btn-primary" style="margin-top: 20px;">START SESSION</button>
         </aside>
 
-        <!-- Main Area: Visualization -->
+        <!-- Main Area: Operations -->
         <main class="panel viz-area">
-            <div class="panel-title">📈 Price Convergence Trajectory</div>
+            <div class="panel-header">
+                <div class="panel-title-icon">02</div>
+                <div class="panel-title">NEGOTIATION TRAJECTORY</div>
+            </div>
             <canvas id="convergence-chart"></canvas>
 
             <div class="stats-grid" style="height: 100px;">
@@ -59,9 +89,12 @@
             </div>
         </main>
 
-        <!-- Right Sidebar: LLM Messages & HITL Controls -->
+        <!-- Right Sidebar: Synthesis -->
         <section class="panel">
-            <div class="panel-title">💬 Hybrid Dialogue Stream</div>
+            <div class="panel-header">
+                <div class="panel-title-icon">03</div>
+                <div class="panel-title">HYBRID SYNTHESIS</div>
+            </div>
             <div id="chat-stream" class="chat-container">
                 <div class="message" style="opacity: 0.5; font-style: italic;">Awaiting session start...</div>
             </div>

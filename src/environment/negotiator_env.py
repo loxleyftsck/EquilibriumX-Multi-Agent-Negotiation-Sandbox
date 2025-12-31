@@ -8,61 +8,57 @@ class NegotiatorEnv(ParallelEnv):
     def __init__(self, config=None):
         super().__init__()
         self.config = config or {}
+        self.num_items = self.config.get("num_items", 1)
         self.max_rounds = self.config.get("max_rounds", 20)
+        self.history_lag = self.config.get("history_lag", 3)
         self.possible_agents = ["supplier", "retailer"]
         self.agents = self.possible_agents[:]
         
-        # Action space: Discrete (0: ACCEPT, 1: COUNTER, 2: QUIT) + Continuous (Proposed Price)
+        # Action space: Discrete (0: ACCEPT, 1: COUNTER, 2: QUIT) + Continuous (Proposed Prices)
         self.action_spaces = {
             agent: gym.spaces.Dict({
                 "type": gym.spaces.Discrete(3),
-                "price": gym.spaces.Box(low=0, high=10000, shape=(1,), dtype=np.float32)
+                "price": gym.spaces.Box(low=0, high=10000, shape=(self.num_items,), dtype=np.float32)
             }) for agent in self.possible_agents
         }
         
         # Observation space: 
-        # [0]: Normalized Current Price (0-1)
-        # [1]: Normalized My Valuation (0-1)
-        # [2]: Normalized Time Remaining (0-1)
-        # [3]: Who is proposing? (1=Me, 0=Opponent)
-        # [4-9]: History lag (last 6 prices)
+        # [0:num_items]: Normalized Current Prices
+        # [num_items:2*num_items]: Normalized My Valuations
+        # [2*num_items]: Normalized Time Remaining
+        # [2*num_items + 1]: Who is proposing? (1=Me, 0=Opponent)
+        # [2*num_items + 2:]: History lag (last N prices)
+        obs_size = (self.num_items * 2) + 2 + (self.num_items * self.history_lag)
         self.observation_spaces = {
-            agent: gym.spaces.Box(low=0, high=1, shape=(10,), dtype=np.float32)
+            agent: gym.spaces.Box(low=0, high=1, shape=(obs_size,), dtype=np.float32)
             for agent in self.possible_agents
         }
         
         self.state = None
+        self.item_weights = self.config.get("item_weights", [1.0] * self.num_items)
 
     def reset(self, seed=None, options=None):
         self.agents = self.possible_agents[:]
         self.current_round = 0
         
-        # 1. Initialize Valuations (Private Info)
+        # 1. Initialize Valuations for all items
         # Supplier cost: 4000-6000
-        self.val_s = np.random.uniform(4000, 6000)
+        self.val_s = np.random.uniform(4000, 6000, size=(self.num_items,))
         # Retailer resale value: 7000-9000
-        self.val_r = np.random.uniform(7000, 9000)
+        self.val_r = np.random.uniform(7000, 9000, size=(self.num_items,))
         
-        # Ensure feasible zone (Z > 0)
-        if self.val_s > self.val_r:
-            self.val_s, self.val_r = self.val_r, self.val_s
+        # Ensure feasible zone for each item (simplification)
+        for i in range(self.num_items):
+            if self.val_s[i] > self.val_r[i]:
+                self.val_s[i], self.val_r[i] = self.val_r[i], self.val_s[i]
         
         self.max_price = 10000.0
         
         # 2. Initialize State
-        # Start with a random initial offer from Supplier (~1.1*Val_S is too low, usually Supplier asks High)
-        # Standard: Supplier asks high, Retailer offers low.
-        # But "Initial State" usually implies "Previous Offer".
-        # Let's say initialization: No price on table yet?
-        # Or convention: Supplier always starts.
-        self.current_price = self.val_r * 0.5 + self.val_s * 0.5 # Midpoint start or random?
-        # Paper says: "Proposed price p".
-        # Let's start with NO deal price, but the 'current_price' variable holds the LAST offer.
-        # Round 0: Supplier makes offer. Last offer is None?
-        # Implementation detail: 'current_price' initiates at a neutral value (e.g. 0) or max?
-        self.current_price = 0.0
-        self.deal_price = None
-        self.price_history = np.zeros(6, dtype=np.float32)
+        # Let's start with NO deal price, but the 'current_prices' variable holds the LAST offer.
+        self.current_prices = np.zeros(self.num_items, dtype=np.float32)
+        self.deal_prices = None
+        self.price_history = np.zeros((self.history_lag, self.num_items), dtype=np.float32)
         
         self.current_proposer = "supplier" 
         
@@ -84,7 +80,7 @@ class NegotiatorEnv(ParallelEnv):
 
         action = actions[agent_name]
         action_type = action["type"] # 0: ACCEPT, 1: COUNTER, 2: QUIT
-        proposed_price = float(action["price"][0])
+        proposed_prices = np.array(action["price"], dtype=np.float32)
         
         rewards = {a: 0.0 for a in self.agents}
         terminations = {a: False for a in self.agents}
@@ -105,47 +101,45 @@ class NegotiatorEnv(ParallelEnv):
                 terminations = {a: True for a in self.agents}
                 rewards[agent_name] = -0.5
             else:
-                self.deal_price = self.current_price
-                deal_price = self.deal_price
+                self.deal_prices = self.current_prices
+                deal_prices = self.deal_prices
                 
-                # Rewards (Surplus)
-                # Supplier: P - Vs
-                r_sup = (deal_price - self.val_s) / self.max_price
-                # Retailer: Vr - P
-                r_ret = (self.val_r - deal_price) / self.max_price
+                # Bundle Profit (weighted sum)
+                r_sup_total = 0
+                r_ret_total = 0
+                for i in range(self.num_items):
+                    r_sup_total += self.item_weights[i] * (deal_prices[i] - self.val_s[i]) / self.max_price
+                    r_ret_total += self.item_weights[i] * (self.val_r[i] - deal_prices[i]) / self.max_price
                 
                 # Discount
                 discount = 0.99 ** self.current_round
-                rewards["supplier"] = r_sup * discount
-                rewards["retailer"] = r_ret * discount
+                rewards["supplier"] = r_sup_total * discount
+                rewards["retailer"] = r_ret_total * discount
                 
                 terminations = {a: True for a in self.agents}
                 infos["supplier"]["result"] = "deal"
                 infos["retailer"]["result"] = "deal"
-                infos["deal_price"] = deal_price
+                infos["deal_prices"] = deal_prices.tolist()
 
         elif action_type == 2: # QUIT
-            rewards["supplier"] = -0.1
-            rewards["retailer"] = -0.1
+            rewards = {a: -0.1 for a in self.agents}
             terminations = {a: True for a in self.agents}
-            infos["supplier"]["result"] = "quit"
-            infos["retailer"]["result"] = "quit"
+            infos = {a: {"result": "quit"} for a in self.agents}
             
         else: # COUNTER (Make a new offer)
             # Update Price
-            self.current_price = np.clip(proposed_price, 0, self.max_price)
+            self.current_prices = np.clip(proposed_prices, 0, self.max_price)
             
             # Update History
-            self.price_history = np.roll(self.price_history, 1)
-            self.price_history[0] = self.current_price / self.max_price
+            self.price_history = np.roll(self.price_history, 1, axis=0)
+            self.price_history[0] = self.current_prices / self.max_price
             
             self.current_round += 1
             
             # Check Timeout
             if self.current_round >= self.max_rounds:
                 truncations = {a: True for a in self.agents}
-                rewards["supplier"] = -0.05
-                rewards["retailer"] = -0.05
+                rewards = {a: -0.05 for a in self.agents}
             else:
                 # Switch Turn
                 self.current_proposer = "retailer" if self.current_proposer == "supplier" else "supplier"
@@ -160,26 +154,23 @@ class NegotiatorEnv(ParallelEnv):
     def _get_obs(self):
         obs_dict = {}
         for agent in self.possible_agents:
-            if agent == "supplier":
-                my_val = self.val_s
-                is_my_turn = 1.0 if self.current_proposer == "supplier" else 0.0
-            else:
-                my_val = self.val_r
-                is_my_turn = 1.0 if self.current_proposer == "retailer" else 0.0
+            my_vals = self.val_s if agent == "supplier" else self.val_r
+            is_my_turn = 1.0 if self.current_proposer == agent else 0.0
             
-            # [Price, MyVal, Time, Turn, History(6)]
-            vec = np.zeros(10, dtype=np.float32)
-            vec[0] = self.current_price / self.max_price
-            vec[1] = my_val / self.max_price
-            vec[2] = self.current_round / self.max_rounds
-            vec[3] = is_my_turn
-            vec[4:] = self.price_history[:6]
-            
-            obs_dict[agent] = vec
+            # Construct flattened observation vector
+            obs_parts = [
+                self.current_prices / self.max_price,       # num_items
+                my_vals / self.max_price,                    # num_items
+                np.array([self.current_round / self.max_rounds], dtype=np.float32), # 1
+                np.array([is_my_turn], dtype=np.float32),   # 1
+                self.price_history.flatten()                 # num_items * history_lag
+            ]
+            obs_dict[agent] = np.concatenate(obs_parts)
         return obs_dict
 
     def render(self):
-        print(f"Round {self.current_round}: Price {self.current_price:.2f} (Turn: {self.current_proposer})")
+        prices_str = ", ".join([f"{p:.2f}" for p in self.current_prices])
+        print(f"Round {self.current_round}: Prices [{prices_str}] (Turn: {self.current_proposer})")
 
     def close(self):
         pass

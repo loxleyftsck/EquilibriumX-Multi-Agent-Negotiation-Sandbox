@@ -1,6 +1,7 @@
 import aiohttp
 import json
 import logging
+import numpy as np
 
 class LLMClient:
     """
@@ -41,21 +42,28 @@ class LLMClient:
             self.logger.error(f"Failed to connect to Ollama: {e}")
             return f"[Error: Connection failed to local LLM at {self.base_url}]"
 
-    def get_negotiation_prompt(self, agent_role: str, offer_price: float, history: list, persona: str = "professional"):
+    def get_negotiation_prompt(self, agent_role: str, offer_prices: list, history: list, persona: str = "professional"):
         """
         Constructs a prompt for the LLM based on the current negotiation state.
         """
         history_str = "\n".join([f"- Offer: {h}" for h in history[-3:]])
         
+        if isinstance(offer_prices, (list, np.ndarray)):
+            bundle_str = "\n".join([f"  - Item {i+1}: ${p:.2f}" for i, p in enumerate(offer_prices)])
+        else:
+            bundle_str = f"  - Price: ${offer_prices:.2f}"
+            
         prompt = f"""
 You are a {agent_role} in a commercial negotiation. 
-Your current strategic offer is: ${offer_price:.2f}.
+Your current strategic bundle offer consists of:
+{bundle_str}
+
 Recent history:
 {history_str}
 
 Persona: {persona}
 
-Task: Write a concise message (max 2 sentences) to the other party justifying this offer. 
+Task: Write a concise message (max 2 sentences) to the other party justifying this bundle offer. 
 Do not mention that you are an AI. Be firm but fair.
 Message:
 """
